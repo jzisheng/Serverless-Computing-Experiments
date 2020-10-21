@@ -28,22 +28,32 @@ public:
   ~SocketClient();  
   bool conn(std::string, int);
   bool send_data(std::string data);
+  bool init_socket();
   std::string receive_data(int);
   std::string get_ip_addr(std::string domain);
 };
 
 SocketClient::SocketClient(){
   domain_name = std::string("");
+  sock_status = -1;
+}
+
+SocketClient::~SocketClient(){
+  if (sock_status != -1){
+    close(socket_desc);
+  }
+}
+
+bool SocketClient::init_socket(){
   // create socket
   socket_desc = socket(AF_INET, SOCK_STREAM,0);
   if(socket_desc == -1){
     // error creating socket
     perror("couldn't create socket\n");
-  } 
-}
-
-SocketClient::~SocketClient(){
-  close(socket_desc);
+    return false;
+  }
+  sock_status = 1;
+  return true;
 }
 
 // can take in as input ip addr or domain name
@@ -84,11 +94,8 @@ bool SocketClient::send_data(std::string message){
 }
 
 std::string SocketClient::receive_data(int sz){
-  
-  //char buffer[sz] = "";
   std::vector<char> buffer(sz);
   int result = -1;
-
   // attempt receive data
   result = recv(socket_desc, &buffer[0], buffer.size(), 0);
   if (result < 0){
@@ -122,20 +129,44 @@ std::string SocketClient::get_ip_addr(std::string domain){
   return ip_addr_str;
 }
 
-void sendRequest(std::string url,int profile){
+double sendRequest(std::string url){
   SocketClient sc = SocketClient();
+  sc.init_socket();
+
+  auto start = std::chrono::steady_clock::now();
   if (sc.conn(url,80)){
-    puts("connected");
+    // successfully connected, send send message with header
+    std::string message = "GET / HTTP/1.1\nHost:"+url+"\n\n";
+    sc.send_data(message);
+
+    // receive response
+    std::string response = sc.receive_data(500);
+
+    puts(response.c_str());    
   }
+  auto end = std::chrono::steady_clock::now();
+  double resTime =std::chrono::duration<double>(end - start).count();  
+  return resTime;
 
-  // send message with header
-  std::string message = "GET / HTTP/1.1\nHost:"+url+"\n\n";
-  sc.send_data(message);
+}
 
-  // receive response
-  std::string response = sc.receive_data(500);
-  puts(response.c_str());
 
+void print(std::vector <double> a) {
+  for(int i=0; i < a.size(); i++){
+    std::cout << a.at(i) << ' ';
+  }
+  std::cout<<"\n";
+}
+
+void profileUrl(std::string url, int profile){
+
+  std::vector<double> resTimes;
+  for(int i = 0; i < profile; i++){
+    double resTime = 0.0;// sendRequest(url);
+    std::cout<<"Sending request "<<i<<".\n";    
+    resTimes.push_back(resTime);
+  }
+  print(resTimes);
 }
 
 
@@ -147,16 +178,18 @@ int main(int argc, char *argv[]){
   
   while ( (opt = getopt(argc, argv, "hu:p:") ) != -1 ){
     switch (opt){
-      
     case 'u':{
       url = optarg;
       continue;
     }
-    case 'm': {
+    case 'p': {
       profile = atoi(optarg);
-    } 
+    }
+      
     }
   }
-  puts(url.c_str());
+  if (url.length() > 0) {
+    profileUrl(url,profile);
+  }
   
 }
