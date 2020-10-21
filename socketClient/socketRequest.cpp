@@ -1,11 +1,15 @@
+// for timing
 #include<chrono>
+
+// for output
 #include<stdio.h>
 #include<iostream>
 #include<stdlib.h>
-#include<string.h>    
+#include<string.h>
+
+// for sockets and ip address
 #include<sys/socket.h>
 #include<arpa/inet.h> 
-#include<vector>
 #include<unistd.h>
 #include<netdb.h> //hostent for ip
 
@@ -63,15 +67,13 @@ bool SocketClient::conn(std::string addr, int port){
   server.sin_family = AF_INET;
   server.sin_port = htons( 80 );
 
-  /*
   // Connect to remote server
   if (connect(socket_desc , (struct sockaddr *) &server ,
 	      sizeof(server)) < 0) {
-    perror("connect error");
+
     return false;
   }
-  puts("connect success");
-  */
+
   return true;  
 
 }
@@ -80,19 +82,20 @@ bool SocketClient::send_data(std::string message){
   if( send(socket_desc,message.c_str(),
 	   strlen(message.c_str()),0) < 0) {
     perror("send failed");
+    return false;
   }
-  puts("Data sent\n");
   return true;
 }
 
 std::string SocketClient::receive_data(int sz){
   char * response = (char*) malloc(sz);
-  if (recv(socket_desc,response,sz,0)<0){
+  if (recv(socket_desc,response,sizeof(response),0)<0){
     // receive data failed
-    perror("receive failed\n");
+    perror("receive failed");
   }
-  free(response);
-  return std::string(response);
+  std::string str_res = std::string(response);
+  free(response);  
+  return str_res;
 }
 
 std::string SocketClient::get_ip_addr(std::string domain){
@@ -102,12 +105,10 @@ std::string SocketClient::get_ip_addr(std::string domain){
   int i;
   
   // get hostname
-  puts("getting hostname");
-  puts(domain.c_str());
   if ((he = gethostbyname(domain.c_str())) == NULL){
     // unable to get hostname, throw error
-    puts("unable to get hostname");
-    return std::string();
+    perror("unable to get hostname");
+    return NULL;
   }
   // get the first valid ip addr
   addr_list = (struct in_addr **) he->h_addr_list;
@@ -120,21 +121,17 @@ std::string SocketClient::get_ip_addr(std::string domain){
 }
 
 
-int main(void){
+int main(int arc, char *argv[]){
+  
   SocketClient sc = SocketClient();
-  std::string hn = "worker.jzisheng.workers.dev";
-  std::string ipaddr = sc.get_ip_addr(hn);
-  puts(ipaddr.c_str());
-  // sc.get_ip_addr();//(hn);
-  /*
-  // connect to server
-  std::string ip = "172.67.206.28";
-  sc.conn(ip,80);
-  // send message
-  std::string message = "GET / HTTP/1.1\nHost: worker.jzisheng.workers.dev\n\n";  
+  std::string hn = "www.google.com";//"worker.jzisheng.workers.dev";
+  if (sc.conn(hn,80)){
+    puts("connected");
+  }
+  // send message with header
+  std::string message = "GET / HTTP/1.1\nHost:"+hn+"\n\n";
   sc.send_data(message);
   // receive response
-  std::string response = sc.receive(500);
+  std::string response = sc.receive_data(500);
   puts(response.c_str());
-  */
 }
