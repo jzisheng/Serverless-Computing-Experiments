@@ -6,11 +6,12 @@
 #include<iostream>
 #include<stdlib.h>
 #include<string.h>
+#include<unistd.h>
+#include<vector>
 
 // for sockets and ip address
 #include<sys/socket.h>
 #include<arpa/inet.h> 
-#include<unistd.h>
 #include<netdb.h> //hostent for ip
 
 class SocketClient{
@@ -32,26 +33,21 @@ public:
 };
 
 SocketClient::SocketClient(){
-  sock_status = -1; // track if socket already created
   domain_name = std::string("");
+  // create socket
+  socket_desc = socket(AF_INET, SOCK_STREAM,0);
+  if(socket_desc == -1){
+    // error creating socket
+    perror("couldn't create socket\n");
+  } 
 }
 
 SocketClient::~SocketClient(){
   close(socket_desc);
 }
 
-
 // can take in as input ip addr or domain name
 bool SocketClient::conn(std::string addr, int port){
-  if (sock_status == -1){
-    // create socket
-    socket_desc = socket(AF_INET, SOCK_STREAM,0);
-  }
-  if(socket_desc == -1){
-    // error creating socket
-    perror("couldn't create socket\n");
-    return false;
-  }
   if (inet_addr(addr.c_str()) == -1){
     // address is a domain name, get IP addr
     domain_name = addr;
@@ -88,13 +84,19 @@ bool SocketClient::send_data(std::string message){
 }
 
 std::string SocketClient::receive_data(int sz){
-  char * response = (char*) malloc(sz);
-  if (recv(socket_desc,response,sizeof(response),0)<0){
+  
+  //char buffer[sz] = "";
+  std::vector<char> buffer(sz);
+  int result = -1;
+
+  // attempt receive data
+  result = recv(socket_desc, &buffer[0], buffer.size(), 0);
+  if (result < 0){
     // receive data failed
     perror("receive failed");
   }
-  std::string str_res = std::string(response);
-  free(response);  
+
+  std::string str_res = std::string(buffer.begin(), buffer.end());
   return str_res;
 }
 
@@ -120,18 +122,41 @@ std::string SocketClient::get_ip_addr(std::string domain){
   return ip_addr_str;
 }
 
-
-int main(int arc, char *argv[]){
-  
+void sendRequest(std::string url,int profile){
   SocketClient sc = SocketClient();
-  std::string hn = "www.google.com";//"worker.jzisheng.workers.dev";
-  if (sc.conn(hn,80)){
+  if (sc.conn(url,80)){
     puts("connected");
   }
+
   // send message with header
-  std::string message = "GET / HTTP/1.1\nHost:"+hn+"\n\n";
+  std::string message = "GET / HTTP/1.1\nHost:"+url+"\n\n";
   sc.send_data(message);
+
   // receive response
   std::string response = sc.receive_data(500);
   puts(response.c_str());
+
+}
+
+
+int main(int argc, char *argv[]){
+
+  int opt;
+  int profile = 10;  
+  std::string url = "";
+  
+  while ( (opt = getopt(argc, argv, "hu:p:") ) != -1 ){
+    switch (opt){
+      
+    case 'u':{
+      url = optarg;
+      continue;
+    }
+    case 'm': {
+      profile = atoi(optarg);
+    } 
+    }
+  }
+  puts(url.c_str());
+  
 }
