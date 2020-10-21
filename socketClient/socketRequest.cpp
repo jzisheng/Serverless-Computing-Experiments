@@ -17,15 +17,14 @@ private:
   struct sockaddr_in server;
   std::string domain_name;
   std::string ip_addr;
-  char * response;
   
 public:
   SocketClient();
   ~SocketClient();  
   bool conn(std::string, int);
   bool send_data(std::string data);
-  std::string receive(int);
-  std::string get_ip_addr(std::string domain_name);
+  std::string receive_data(int);
+  std::string get_ip_addr(std::string domain);
 };
 
 SocketClient::SocketClient(){
@@ -83,88 +82,48 @@ bool SocketClient::send_data(std::string message){
   return true;
 }
 
-std::string SocketClient::receive(int sz){
-  response = (char*) malloc(sz);
+std::string SocketClient::receive_data(int sz){
+  char * response = (char*) malloc(sz);
   if (recv(socket_desc,response,sz,0)<0){
     // receive data failed
     perror("receive failed\n");
   }
+  free(response);
   return std::string(response);
 }
 
-
-void getHostName(void){
-  char * hostname = (char*) "www.google.com";
-  hostname = (char*) "worker.jzisheng.workers.dev";
+std::string SocketClient::get_ip_addr(std::string domain){
   char * ip = (char*) malloc(100);
   struct hostent *he;
   struct in_addr **addr_list;
   int i;
-
+  
+  // get hostname
   puts("getting hostname");
-  if ((he = gethostbyname(hostname)) == NULL){
+  puts(domain.c_str());
+  if ((he = gethostbyname(domain.c_str())) == NULL){
+    // unable to get hostname, throw error
     puts("unable to get hostname");
-    return;
+    return std::string();
   }
+  // get the first valid ip addr
   addr_list = (struct in_addr **) he->h_addr_list;
   for (i = 0; addr_list[i] != NULL; i++){
     strcpy(ip,inet_ntoa(*addr_list[i]));
   }
-  puts(hostname);
-  puts(ip);
+  std::string ip_addr_str = std::string(ip);
   free(ip);
-  return;
+  return ip_addr_str;
 }
 
-
-void getContentFromIp(char * ip_addr){
-  // get content of web page from ip
-  int socket_desc;
-  struct sockaddr_in server;
-  
-  socket_desc = socket(AF_INET, SOCK_STREAM,0);
-
-  if(socket_desc == -1){
-    printf("couldn't create socket\n");
-  }
-
-  server.sin_addr.s_addr = inet_addr(ip_addr);
-  server.sin_family = AF_INET;
-  server.sin_port = htons( 80 );
-  
-  // Connect to remote server
-  if (connect(socket_desc , (struct sockaddr *)&server , sizeof(server)) < 0)
-    {
-      puts("connect error");
-      return;
-    }
-	
-  puts("Connected");
-  puts(ip_addr);
-  // Send data
-  const char * message = "GET / HTTP/1.1\nHost: worker.jzisheng.workers.dev\n\n";
-  if(send(socket_desc,message,strlen(message),0)<0){
-    printf("send failed");
-    return;
-  }
-  printf("Data send\n");
-
-  char * server_reply = (char*) malloc(1000);
-  if (recv(socket_desc,server_reply,1000,0)<0){
-    // receive data
-    printf("receive failed\n");    
-  }
-  puts("reply received\n");
-  puts(server_reply);
-  close(socket_desc);
-  free(server_reply);
-  return;
-}
 
 int main(void){
-  //getHostName();
-  //getContentFromIp( (char *)"172.67.206.28" );
-  SocketClient sc = SocketClient();
+  // SocketClient sc = SocketClient();
+  // std::string hn = "worker.jzisheng.workers.dev";
+  // std::string ipaddr = sc.get_ip_addr(hn);
+  // puts(ipaddr.c_str());
+  // sc.get_ip_addr();//(hn);
+  /*
   // connect to server
   std::string ip = "172.67.206.28";
   sc.conn(ip,80);
@@ -174,4 +133,5 @@ int main(void){
   // receive response
   std::string response = sc.receive(500);
   puts(response.c_str());
+  */
 }
