@@ -33,9 +33,7 @@ SocketClient::SocketClient(){
 }
 
 SocketClient::~SocketClient(){
-  // destructor
-  //free(response);
-  //close(socket_desc);
+  close(socket_desc);
 }
 
 
@@ -52,17 +50,20 @@ bool SocketClient::conn(std::string addr, int port){
   }
   if (inet_addr(addr.c_str()) == -1){
     // address is a domain name, get IP addr
-    domain_name = addr;      
+    domain_name = addr;
+    ip_addr = get_ip_addr(addr);
   }
   else{
     // address is a IP address
     domain_name = "";
     ip_addr = addr;
-    server.sin_addr.s_addr = inet_addr(ip_addr.c_str());
-    server.sin_family = AF_INET;
-    server.sin_port = htons( 80 );
-  }    
+  }
   
+  server.sin_addr.s_addr = inet_addr(ip_addr.c_str());
+  server.sin_family = AF_INET;
+  server.sin_port = htons( 80 );
+
+  /*
   // Connect to remote server
   if (connect(socket_desc , (struct sockaddr *) &server ,
 	      sizeof(server)) < 0) {
@@ -70,7 +71,9 @@ bool SocketClient::conn(std::string addr, int port){
     return false;
   }
   puts("connect success");
+  */
   return true;  
+
 }
 
 bool SocketClient::send_data(std::string message){
@@ -118,10 +121,10 @@ std::string SocketClient::get_ip_addr(std::string domain){
 
 
 int main(void){
-  // SocketClient sc = SocketClient();
-  // std::string hn = "worker.jzisheng.workers.dev";
-  // std::string ipaddr = sc.get_ip_addr(hn);
-  // puts(ipaddr.c_str());
+  SocketClient sc = SocketClient();
+  std::string hn = "worker.jzisheng.workers.dev";
+  std::string ipaddr = sc.get_ip_addr(hn);
+  puts(ipaddr.c_str());
   // sc.get_ip_addr();//(hn);
   /*
   // connect to server
