@@ -1,6 +1,9 @@
 // for timing
 #include<chrono>
 
+// for pairing results
+#include<utility> // std::pair, std::make_pair
+
 // for output
 #include<stdio.h>
 #include<iostream>
@@ -129,6 +132,16 @@ std::string SocketClient::get_ip_addr(std::string domain){
   return ip_addr_str;
 }
 
+/*
+ * Determins if a response was successful
+ */
+bool isResponseSuccess(std::string response){
+  if (response.find("200 OK") != std::string::npos) {
+    return true;
+  }
+  return false;
+}
+
 double sendRequest(std::string url){
   SocketClient sc = SocketClient();
   sc.init_socket();
@@ -140,14 +153,19 @@ double sendRequest(std::string url){
     sc.send_data(message);
 
     // receive response
-    std::string response = sc.receive_data(500);
+    std::string response = sc.receive_data(80);
+    if(isResponseSuccess(response)){
+      puts("success!");
+    }
+    else{
+      puts("failure!");
+    }
 
-    puts(response.c_str());    
+
   }
   auto end = std::chrono::steady_clock::now();
   double resTime =std::chrono::duration<double>(end - start).count();  
   return resTime;
-
 }
 
 
@@ -162,8 +180,8 @@ void profileUrl(std::string url, int profile){
 
   std::vector<double> resTimes;
   for(int i = 0; i < profile; i++){
-    double resTime = 0.0;// sendRequest(url);
-    std::cout<<"Sending request "<<i<<".\n";    
+    double resTime = sendRequest(url);
+    std::cout<<"Sending request "<<i<<"\n";    
     resTimes.push_back(resTime);
   }
   print(resTimes);
