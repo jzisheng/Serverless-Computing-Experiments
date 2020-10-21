@@ -1,0 +1,99 @@
+#include<chrono>
+#include<stdio.h>
+#include<iostream>
+#include<stdlib.h>
+#include<string.h>    
+#include<sys/socket.h>
+#include<arpa/inet.h> 
+#include<vector>
+#include<unistd.h>
+#include<netdb.h> //hostent for ip
+
+class SocketClient{
+private:
+  int socket_desc;
+  int port;
+  struct sockaddr_in server;
+  std::string domainName;  
+  std::string ip_addr;
+  std::string response;
+  
+public:
+  SocketClient();
+  bool conn(string, int);
+  
+};
+
+
+void getHostName(void){
+  char * hostname = (char*) "www.google.com";
+  hostname = (char*) "worker.jzisheng.workers.dev";
+  char * ip = (char*) malloc(100);
+  struct hostent *he;
+  struct in_addr **addr_list;
+  int i;
+
+  puts("getting hostname");
+  if ((he = gethostbyname(hostname)) == NULL){
+    puts("unable to get hostname");
+    return;
+  }
+  addr_list = (struct in_addr **) he->h_addr_list;
+  for (i = 0; addr_list[i] != NULL; i++){
+    strcpy(ip,inet_ntoa(*addr_list[i]));
+  }
+  puts(hostname);
+  puts(ip);
+  free(ip);
+  return;
+}
+
+
+void getContentFromIp(char * ip_addr){
+  // get content of web page from ip
+  int socket_desc;
+  struct sockaddr_in server;
+  
+  socket_desc = socket(AF_INET, SOCK_STREAM,0);
+
+  if(socket_desc == -1){
+    printf("couldn't create socket\n");
+  }
+
+  server.sin_addr.s_addr = inet_addr(ip_addr);
+  server.sin_family = AF_INET;
+  server.sin_port = htons( 80 );
+  
+  // Connect to remote server
+  if (connect(socket_desc , (struct sockaddr *)&server , sizeof(server)) < 0)
+    {
+      puts("connect error");
+      return;
+    }
+	
+  puts("Connected");
+  puts(ip_addr);
+  // Send data
+  const char * message = "GET / HTTP/1.1\nHost: worker.jzisheng.workers.dev\n\n";
+  if(send(socket_desc,message,strlen(message),0)<0){
+    printf("send failed");
+    return;
+  }
+  printf("Data send\n");
+
+  char * server_reply = (char*) malloc(1000);
+  if (recv(socket_desc,server_reply,1000,0)<0){
+    // receive data
+    printf("receive failed\n");    
+  }
+  puts("reply received\n");
+  puts(server_reply);
+  close(socket_desc);
+  free(server_reply);
+  return;
+}
+
+int main(void){
+  getHostName();
+  getContentFromIp( (char *)"172.67.206.28" );
+}
