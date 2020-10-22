@@ -16,7 +16,7 @@
 #include "src/socketclient.h"
 #include "src/resdata.h"
 
-const int BUFF_SIZE = 4096;
+const int BUFF_SIZE = 8192;
 
 std::string getResponseStatus(std::string response){
   std::string keyword = "HTTP/1.1 "; // key to find status code
@@ -65,7 +65,6 @@ void printVector(std::vector< ResData > a) {
 }
 
 void profileUrl(std::string url, int profile){
-
   std::vector<ResData > results;
   for(int i = 0; i < profile; i++){
     ResData result = sendRequest(url);

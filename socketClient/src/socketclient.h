@@ -109,6 +109,7 @@ std::string SocketClient::receive_data(int sz){
   
   auto start = std::chrono::steady_clock::now();  
   while(true){
+    // measure time difference
     auto end = std::chrono::steady_clock::now();
     double timediff = std::chrono::duration<double>(end - start).count();
     if (total_sz > 0 && timediff > timeout){
@@ -118,16 +119,21 @@ std::string SocketClient::receive_data(int sz){
     else if (timediff > timeout*2){
       break;
     }
+    
     size_recv = recv(socket_desc, &buffer[0], buffer.size(), 0);
+    if(size_recv == 0){
+      // FIN packet has been received
+      break;
+    }
     if(size_recv < 0){
-      usleep(100);
+      // turned off blocking mode so I can wait and try again
+      usleep(500);
     }
     else{
-      // std::cout << size_recv << " time: " << timediff << "\n";
+      // add chunk to str res, and update total size
       total_sz += size_recv;
       std::string str_chunk = std::string(buffer.begin(), buffer.end());
       str_res = str_res + str_chunk;
-      // buffer.clear();
     }
   }
   std::cout << "size: "<<total_sz << " | len: "  << str_res.length() << "\n";
