@@ -14,7 +14,9 @@
 
 // socketclient and data point
 #include "src/socketclient.h"
-#include "src/data.h"
+#include "src/resdata.h"
+
+const int BUFF_SIZE = 4096;
 
 std::string getResponseStatus(std::string response){
   std::string keyword = "HTTP/1.1 "; // key to find status code
@@ -27,7 +29,7 @@ std::string getResponseStatus(std::string response){
 }
 
 
-Data sendRequest(std::string url){
+ResData sendRequest(std::string url){
   // create and init socket client
   SocketClient sc = SocketClient();
   sc.init_socket();
@@ -41,31 +43,32 @@ Data sendRequest(std::string url){
     // successfully connected, send send message with header
     sc.send_data(message);
     // receive response
-    response = sc.receive_data(500);
+    response = sc.receive_data(BUFF_SIZE);
+    // std::cout<< "---- \n"<<response<< "---- \n";
     status = getResponseStatus(response);
   }
   // end timer
   auto end = std::chrono::steady_clock::now();
   // get total response time
-  double res_time =std::chrono::duration<double>(end - start).count();  
+  double res_time = std::chrono::duration<double>(end - start).count();  
   // store objects in data object
-  Data d = Data(response, status, res_time);
-  return d;
+  return ResData(response, status, res_time);
 }
 
 
-void printVector(std::vector< std::pair<bool,double> > a) {
+void printVector(std::vector< ResData > a) {
   for(size_t i=0; i < a.size(); i++){
-    std::cout << "(" << a.at(i).first << " " << a.at(i).second << ") ";
+    std::cout << "(" << a.at(i).status << ", " <<
+      a.at(i).res_time << ", " << a.at(i).response.length() << ") ";
   }
   std::cout<<"\n";
 }
 
 void profileUrl(std::string url, int profile){
 
-  std::vector< std::pair<bool,double> > results;
+  std::vector<ResData > results;
   for(int i = 0; i < profile; i++){
-    std::pair<bool,double> result = sendRequest(url);
+    ResData result = sendRequest(url);
     std::cout<<"Sending request "<<i<<"/"<<profile<<"\n";    
     results.push_back(result);
   }

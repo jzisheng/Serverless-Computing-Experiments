@@ -19,6 +19,7 @@
 #include<sys/socket.h>
 #include<arpa/inet.h> 
 #include<netdb.h> //hostent for ip
+#include<fcntl.h>	//fcntl
 
 class SocketClient{
 private:
@@ -98,15 +99,38 @@ bool SocketClient::send_data(std::string message){
 
 std::string SocketClient::receive_data(int sz){
   std::vector<char> buffer(sz);
-  int result = -1;
-  // attempt receive data
-  result = recv(socket_desc, &buffer[0], buffer.size(), 0);
-  if (result < 0){
-    // receive data failed
-    perror("receive failed");
+  std::string str_res = "";
+  // non blocking socket
+  fcntl(socket_desc, F_SETFL, O_NONBLOCK);  
+  
+  int total_sz = 0;
+  int size_recv = 0;
+  double timeout = 1.5;
+  
+  auto start = std::chrono::steady_clock::now();  
+  while(true){
+    auto end = std::chrono::steady_clock::now();
+    double timediff = std::chrono::duration<double>(end - start).count();
+    if (total_sz > 0 && timediff > timeout){
+      // empty response
+      break;
+    }
+    else if (timediff > timeout*2){
+      break;
+    }
+    size_recv = recv(socket_desc, &buffer[0], buffer.size(), 0);
+    if(size_recv < 1){
+      usleep(100);
+    }
+    else{
+      // std::cout << size_recv << " time: " << timediff << "\n";
+      total_sz += size_recv;
+      std::string str_chunk = std::string(buffer.begin(), buffer.end());
+      str_res = str_res + str_chunk;
+      // buffer.clear();
+    }
   }
-
-  std::string str_res = std::string(buffer.begin(), buffer.end());
+  std::cout << "size: "<<total_sz << " | len: "  << str_res.length() << "\n";
   return str_res;
 }
 
@@ -131,7 +155,7 @@ std::string SocketClient::get_ip_addr(std::string domain){
   }
   std::string ip_addr_str = std::string(ip);
   free(ip);
-  std::cout<< ip_addr_str;
+  std::cout<< domain << " --> " <<ip_addr_str<< "\n";
   return ip_addr_str;
 }
 
