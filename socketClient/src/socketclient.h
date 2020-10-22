@@ -67,7 +67,10 @@ bool SocketClient::conn(std::string addr, int port){
   // address is a domain name, get IP addr
   domain_name = addr;
   ip_addr = get_ip_addr(addr);
-
+  if (ip_addr.size() == 0){
+    // no ip address found
+    return false;
+  }
   
   server.sin_addr.s_addr = inet_addr(ip_addr.c_str());
   server.sin_family = AF_INET;
@@ -111,33 +114,26 @@ std::string SocketClient::get_ip_addr(std::string domain){
   char * ip = (char*) malloc(100);
   struct hostent *he;
   struct in_addr **addr_list;
+  std::string res = "";
   int i;
   
   // get hostname
   if ((he = gethostbyname(domain.c_str())) == NULL){
     // unable to get hostname, throw error
-    perror("unable to get hostname");
-    return NULL;
-  }
-  // get the first valid ip addr
-  addr_list = (struct in_addr **) he->h_addr_list;
-  for (i = 0; addr_list[i] != NULL; i++){
-    strcpy(ip,inet_ntoa(*addr_list[i]));
+    perror("unable to get hostname\n");
+    ip[0] = '\0';
+  } else{
+    // able to get hostname, get the first valid ip addr
+    addr_list = (struct in_addr **) he->h_addr_list;
+    for (i = 0; addr_list[i] != NULL; i++){
+      strcpy(ip,inet_ntoa(*addr_list[i]));
+    }
   }
   std::string ip_addr_str = std::string(ip);
   free(ip);
+  std::cout<< ip_addr_str;
   return ip_addr_str;
 }
 
-/*
- * Determins if a response was successful
- */
-bool isResponseSuccess(std::string response){
-  std::string keyword = "HTTP/1.1 "; // key to find status code
-  std::size_t idx = response.find(keyword);
-  std::cout<< "response: " <<response.substr(idx+keyword.size(),3)<<"\n";
-  // idx+10, idx+10+3
-  return true;
-}
 
-
+#endif
