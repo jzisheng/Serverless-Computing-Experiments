@@ -1,3 +1,6 @@
+#ifndef __SOCKETCLIENT_H_
+#define __SOCKETCLIENT_H_
+
 // for timing
 #include<chrono>
 
@@ -138,96 +141,3 @@ bool isResponseSuccess(std::string response){
 }
 
 
-std::pair<bool,double> sendRequest(std::string url){
-  SocketClient sc = SocketClient();
-  sc.init_socket();
-  bool isOk = false;
-
-  auto start = std::chrono::steady_clock::now();
-  if (sc.conn(url,80)){
-    // successfully connected, send send message with header
-    std::string message = "GET / HTTP/1.1\nHost:"+url+"\n\n";
-    sc.send_data(message);
-
-    // receive response
-    std::string response = sc.receive_data(500);
-    isOk = isResponseSuccess(response);
-    // std::cout << response << "\n";
-  }
-  auto end = std::chrono::steady_clock::now();
-  double resTime =std::chrono::duration<double>(end - start).count();  
-  std::pair<bool,double> res(isOk,resTime);
-  return res;
-}
-
-
-void print(std::vector< std::pair<bool,double> > a) {
-  for(size_t i=0; i < a.size(); i++){
-    std::cout << "(" << a.at(i).first << " " << a.at(i).second << ") ";
-  }
-  std::cout<<"\n";
-}
-
-void profileUrl(std::string url, int profile){
-
-  std::vector< std::pair<bool,double> > results;
-  for(int i = 0; i < profile; i++){
-    std::pair<bool,double> result = sendRequest(url);
-    std::cout<<"Sending request "<<i<<"/"<<profile<<"\n";    
-    results.push_back(result);
-  }
-  print(results);
-}
-
-/*
-  Number of requests
-  slowest/fastest time
-  mean/median times
-  percentage of successful requests
-  error codes returned that were not a success
-  size in bytes of smallest response
-  size in bytes of largest response
- */
-void processResults(std::vector< std::pair<bool,double> > results){
-
-}
-
-void help() {
-  std::cout << "Usage: socketRequest -u [url] -p [number] ";
-  std::cout << "  where:\n";
-  std::cout << "  -u (--url) is the url domain\n";
-  std::cout << "     name. This defaults to port 80 if not specified.\n";
-  std::cout << "     Port 0 is an invalid port.\n";
-  std::cout << "  -p (--profile) is the number of requests\n";
-  std::cout << "     to make. This defaults to 10 if not specified.\n";
-}
-
-int main(int argc, char *argv[]){
-
-  int opt;
-  int profile = 10;  
-  std::string url = "";
-  
-  while ( (opt = getopt(argc, argv, "hu:p:") ) != -1 ){
-    switch (opt){
-    case 'u':{
-      url = optarg;
-      continue;
-    }
-    case 'p': {
-      profile = atoi(optarg);
-      continue;
-    }
-    case 'h':{
-      help();
-      continue;
-    }
-    }
-  }
-  if (url.length() > 0 && profile > 0) {
-    profileUrl(url,profile);
-  } else{
-    help();
-  }
-  
-}
