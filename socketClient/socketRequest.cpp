@@ -83,7 +83,16 @@ void profileUrl(std::string url, int profile){
   size in bytes of smallest response
   size in bytes of largest response
  */
-void processResults(std::vector< std::pair<bool,double> > results){
+void processResults(std::vector<ResData> results){
+  int numSuccessReqs = 0;
+  double minTime = 999.9;
+  double maxTime = 0.0;
+  double timeSum = 0.0;
+  std::vector<std::string> failedReqs;
+
+  for(size_t i=0; i < results.size(); i++){
+    // std::cout << "(" << a.at(i).status << ", " <<;    
+  }
 
 }
 
