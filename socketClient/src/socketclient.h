@@ -119,7 +119,7 @@ std::string SocketClient::receive_data(int sz){
       break;
     }
     size_recv = recv(socket_desc, &buffer[0], buffer.size(), 0);
-    if(size_recv < 1){
+    if(size_recv < 0){
       usleep(100);
     }
     else{
