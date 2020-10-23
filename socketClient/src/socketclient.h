@@ -127,7 +127,7 @@ std::pair<std::string, size_t> SocketClient::receive_data(int sz){
     }
     if(size_recv < 0){
       // turned off blocking mode so I can wait and try again
-      usleep(500);
+      sleep(500);
     }
     else{
       // add chunk to str res, and update total size
