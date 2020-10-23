@@ -123,13 +123,13 @@ void processResults(std::vector<ResData> results){
   std::cout<<"num requests:    "<<results.size() << "\n";
   std::cout<<"time  | max:     "<<max_time<<" min: "<<min_time<<"\n";
   std::cout<<"time  | mean:    "<<mean_time <<"\n";//<<" median:"<<median_time<< "\n";
-  std::cout<<"success %:       "<<numSuccessReqs<<"/"<<results.size()<<"\n";
+  std::cout<<"bytes | max:     "<< max_sz << " min: " << min_sz << "\n";
+  std::cout<<"success %:       "<<numSuccessReqs<<"/"<<results.size()<<"\n";  
+
   std::cout<<"error responses: " << failed_req.size() << "\n";
   for(size_t i = 0; i < failed_req.size(); i++){
     std::cout << failed_req.at(i) << ", ";
-  }
-  std::cout<< "\n";  
-  std::cout<<"bytes | max:     "<< max_sz << "min: " << min_sz << "\n";
+  }  
 }
 
 void profileUrl(std::string url, int profile){
