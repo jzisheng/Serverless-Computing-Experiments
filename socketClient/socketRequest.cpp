@@ -31,18 +31,29 @@ std::string getResponseStatus(std::string response){
   return res;
 }
 
+std::pair<std::string, std::string> getUrlRoute(std::string url){
+    std::size_t idx = url.find("/");
+    std::pair<std::string, std::string> urlRoute;
+    urlRoute.first = url.substr(0,idx);
+    urlRoute.second = url.substr(idx+1);
+    // std::cout<<urlRoute.first<< " "<<urlRoute.second <<"\n";
+    return urlRoute;
+}
+
 
 ResData sendRequest(std::string url){
   // create and init socket client
   SocketClient sc = SocketClient();
   sc.init_socket();
   // init strings
-  std::string message = "GET / HTTP/1.1\nHost:"+url+"\n\n";  
+  std::pair<std::string, std::string> urlRoute = getUrlRoute(url);
+  
+  std::string message = "GET /"+urlRoute.second+" HTTP/1.1\nHost:"+urlRoute.first+"\n\n";  
   std::pair<std::string, double> response;
   std::string status;
   // start timer
   auto start = std::chrono::steady_clock::now();
-  if (sc.conn(url,80)){
+  if (sc.conn(urlRoute.first,80)){
     // successfully connected, send send message with header
     sc.send_data(message);
     // receive response
@@ -98,13 +109,13 @@ void processResults(std::vector<ResData> results){
   size_t numSuccessReqs = 0;
   // doubles for storing times
   std::vector<double> times;
-  double min_time = 999.9;
+  double min_time = 9999999.9;
   double max_time = 0.0;
   double sum_time = 0.0;
 
   // size_t for storing bytes
-  double min_sz;
-  double max_sz;
+  double min_sz = 999999999.9;
+  double max_sz = 0.0;;
   
   std::vector<std::string> failed_req;
   std::string status;
@@ -121,7 +132,7 @@ void processResults(std::vector<ResData> results){
     sum_time += time;
 
     max_sz = fmax(max_sz, sz);
-    min_sz = fmax(min_sz, sz);
+    min_sz = fmin(min_sz, sz);
     
     if (status.compare("200") == 0){
       // success response
@@ -165,7 +176,7 @@ void profileUrl(std::string url, int profile){
 
 
 void help() {
-  std::cout << "Usage: socketRequest -u [url] -p [number] ";
+  std::cout << "Usage: socketRequest -u [url] -p [number] \n";
   std::cout << "  where:\n";
   std::cout << "  -u (--url) is the url domain\n";
   std::cout << "     name. This defaults to port 80 if not specified.\n";
@@ -191,7 +202,7 @@ int main(int argc, char *argv[]){
       continue;
     }
     case 'h':{
-      help();
+      // help();
       continue;
     }
     }
