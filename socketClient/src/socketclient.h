@@ -36,7 +36,7 @@ public:
   bool conn(std::string, int);
   bool send_data(std::string data);
   bool init_socket();
-  std::string receive_data(int);
+  std::pair<std::string, size_t> receive_data(int sz);
   std::string get_ip_addr(std::string domain);
 };
 
@@ -97,7 +97,7 @@ bool SocketClient::send_data(std::string message){
   return true;
 }
 
-std::string SocketClient::receive_data(int sz){
+std::pair<std::string, size_t> SocketClient::receive_data(int sz){
   std::vector<char> buffer(sz);
   std::string str_res = "";
   // non blocking socket
@@ -136,8 +136,8 @@ std::string SocketClient::receive_data(int sz){
       str_res = str_res + str_chunk;
     }
   }
-  std::cout << "size: "<<total_sz << " | len: "  << str_res.length() << "\n";
-  return str_res;
+  // std::cout << "size: "<<total_sz << " | len: "  << str_res.length() << "\n";
+  return std::make_pair(str_res, total_sz);
 }
 
 std::string SocketClient::get_ip_addr(std::string domain){
@@ -161,7 +161,6 @@ std::string SocketClient::get_ip_addr(std::string domain){
   }
   std::string ip_addr_str = std::string(ip);
   free(ip);
-  std::cout<< domain << " --> " <<ip_addr_str<< "\n";
   return ip_addr_str;
 }
 

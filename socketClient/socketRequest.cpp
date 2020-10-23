@@ -1,8 +1,8 @@
 // for timing
 #include<chrono>
+#include<algorithm> // for sorting
 
-
-#include <cmath>  // min/max function
+#include <math.h>  // min/max function
 
 // for pairing results
 #include<utility> // std::pair, std::make_pair
@@ -38,7 +38,7 @@ ResData sendRequest(std::string url){
   sc.init_socket();
   // init strings
   std::string message = "GET / HTTP/1.1\nHost:"+url+"\n\n";  
-  std::string response;
+  std::pair<std::string, double> response;
   std::string status;
   // start timer
   auto start = std::chrono::steady_clock::now();
@@ -48,16 +48,14 @@ ResData sendRequest(std::string url){
     // receive response
     response = sc.receive_data(BUFF_SIZE);
     // std::cout<< "---- \n"<<response<< "---- \n";
-    status = getResponseStatus(response);
+    status = getResponseStatus(response.first);
   }
   // end timer
   auto end = std::chrono::steady_clock::now();
   // get total response time
   double res_time = std::chrono::duration<double>(end - start).count();  
   // store objects in data object
-  size_t dsz = 10;  
-  
-  return ResData(response, status, dsz, res_time);  
+  return ResData(response.first, status, response.second, res_time);  
 }
 
 
@@ -67,6 +65,23 @@ void printVector(std::vector< ResData > a) {
       a.at(i).res_time << ", " << a.at(i).response.length() << ") ";
   }
   std::cout<<"\n";
+}
+
+
+double calcMedian(std::vector<double> times){
+  size_t size = times.size();
+  if (size == 0) {
+    return 0; 
+  }
+  else  {
+    std::sort(times.begin(), times.end());
+    if (size % 2 == 0) {
+      return (times[size / 2 - 1] + times[size / 2]) / 2;
+    }
+    else  {
+      return times[size / 2];
+    }
+  }
 }
 
 
@@ -88,13 +103,13 @@ void processResults(std::vector<ResData> results){
   double sum_time = 0.0;
 
   // size_t for storing bytes
-  size_t min_sz;
-  size_t max_sz;
+  double min_sz;
+  double max_sz;
   
   std::vector<std::string> failed_req;
   std::string status;
   double time;
-  size_t sz;
+  double sz;
   for(size_t i=0; i < results.size(); i++){
     status = results.at(i).status;
     time = results.at(i).res_time;
@@ -106,7 +121,7 @@ void processResults(std::vector<ResData> results){
     sum_time += time;
 
     max_sz = fmax(max_sz, sz);
-    min_sz = fmin(min_sz, sz);
+    min_sz = fmax(min_sz, sz);
     
     if (status.compare("200") == 0){
       // success response
@@ -116,16 +131,21 @@ void processResults(std::vector<ResData> results){
       failed_req.push_back(status);
     }
   }
-  std::cout<<"processing results ...\n";
+
   double mean_time = sum_time/results.size();
-  // double median_time = calcMedian(times);
-
+  double median_time = calcMedian(times);
+  std::cout<<" === RESULTS ===\n";  
   std::cout<<"num requests:    "<<results.size() << "\n";
-  std::cout<<"time  | max:     "<<max_time<<" min: "<<min_time<<"\n";
-  std::cout<<"time  | mean:    "<<mean_time <<"\n";//<<" median:"<<median_time<< "\n";
-  std::cout<<"bytes | max:     "<< max_sz << " min: " << min_sz << "\n";
+  std::cout<<"time  | max:     "<<max_time<<"\n";
+  std::cout<<"      | min:     "<<min_time<<"\n";
+  std::cout<<"      | mean:    "<<mean_time <<"\n";
+  std::cout<<"      | median:  "<<median_time<< "\n";
+  std::cout<<"-----------------\n";
+  std::cout<<"bytes | max:     "<< max_sz << "\n";
+  std::cout<<"      | min:     " << min_sz << "\n";
+  std::cout<<"-----------------\n";  
   std::cout<<"success %:       "<<numSuccessReqs<<"/"<<results.size()<<"\n";  
-
+  std::cout<<"-----------------\n";
   std::cout<<"error responses: " << failed_req.size() << "\n";
   for(size_t i = 0; i < failed_req.size(); i++){
     std::cout << failed_req.at(i) << ", ";
@@ -134,9 +154,10 @@ void processResults(std::vector<ResData> results){
 
 void profileUrl(std::string url, int profile){
   std::vector<ResData > results;
+  std::cout<<"Profiling "<<url <<"\n";
   for(int i = 0; i < profile; i++){
     ResData result = sendRequest(url);
-    std::cout<<"Sending request "<<i<<"/"<<profile<<"\n";    
+    std::cout<<"Sending request "<<i+1<<"/"<<profile<<"\n";    
     results.push_back(result);
   }
   processResults(results);
