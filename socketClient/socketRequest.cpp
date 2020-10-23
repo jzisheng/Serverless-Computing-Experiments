@@ -16,7 +16,7 @@
 #include "src/socketclient.h"
 #include "src/resdata.h"
 
-const int BUFF_SIZE = 8192;
+const int BUFF_SIZE = 4096;
 
 std::string getResponseStatus(std::string response){
   std::string keyword = "HTTP/1.1 "; // key to find status code
@@ -43,8 +43,7 @@ ResData sendRequest(std::string url){
     // successfully connected, send send message with header
     sc.send_data(message);
     // receive response
-    response = sc.receive_data(BUFF_SIZE); 
-    // std::cout<< "---- \n"<<response<< "---- \n";
+    response = sc.receive_data(BUFF_SIZE);    
     status = getResponseStatus(response.first);
   }
   // end timer
@@ -56,8 +55,6 @@ ResData sendRequest(std::string url){
 		 response.second, res_time);
 }
 
-
-
 void printVector(std::vector< ResData > a) {
   for(size_t i=0; i < a.size(); i++){
     std::cout << "(" << a.at(i).status << ", " <<
@@ -65,6 +62,24 @@ void printVector(std::vector< ResData > a) {
   }
   std::cout<<"\n";
 }
+
+
+double calcMedian(std::vector<double> times){
+  size_t size = times.size();
+  if (size == 0) {
+    return 0; 
+  }
+  else  {
+    sort(times.begin(), times.end());
+    if (size % 2 == 0) {
+      return (times[size / 2 - 1] + times[size / 2]) / 2;
+    }
+    else  {
+      return times[size / 2];
+    }
+  }
+}
+
 
 
 /*
@@ -96,7 +111,8 @@ void processResults(std::vector<ResData> results){
     status = results.at(i).status;
     time = results.at(i).res_time;
     sz = results.at(i).data_sz;
-    
+
+    times.push_back(time);
     max_time = fmax(max_time, time);
     min_time = fmin(min_time, time);
     sum_time += time;
@@ -112,10 +128,13 @@ void processResults(std::vector<ResData> results){
       failed_req.push_back(status);
     }
   }
+  std::cout<<"processing results ...\n";
   double mean_time = sum_time/results.size();
+  double median_time = calcMedian(times);
+
   std::cout<<"num requests:    "<<results.size() << "\n";
   std::cout<<"time  | max:     "<<max_time<<" min: "<<min_time<<"\n";
-  std::cout<<"time  | mean:    "<<mean_time << "\n";
+  std::cout<<"time  | mean:    "<<mean_time <<" median:"<<median_time<< "\n";
   std::cout<<"success %:       "<<numSuccessReqs<<"/"<<results.size()<<"\n";
   std::cout<<"error responses: " << failed_req.size() << "\n";
   for(int i = 0; i < times.size(); i++){
@@ -124,7 +143,6 @@ void processResults(std::vector<ResData> results){
   std::cout<< "\n";  
   std::cout<<"bytes | max:     "<< max_sz << "min: " << min_sz << "\n";
 }
-
 
 
 void profileUrl(std::string url, int profile){

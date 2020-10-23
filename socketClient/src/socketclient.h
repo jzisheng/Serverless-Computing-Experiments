@@ -105,9 +105,10 @@ std::pair<std::string, size_t> SocketClient::receive_data(int sz){
   
   int total_sz = 0;
   int size_recv = 0;
-  double timeout = 1.5;
+  double timeout = 1.0;
   
-  auto start = std::chrono::steady_clock::now();  
+  auto start = std::chrono::steady_clock::now();
+
   while(true){
     // measure time difference
     auto end = std::chrono::steady_clock::now();
@@ -121,13 +122,14 @@ std::pair<std::string, size_t> SocketClient::receive_data(int sz){
     }
     
     size_recv = recv(socket_desc, &buffer[0], buffer.size(), 0);
+    std::cout<<size_recv<<"\n";    
     if(size_recv == 0){
       // FIN packet has been received
       break;
     }
     if(size_recv < 0){
       // turned off blocking mode so I can wait and try again
-      sleep(500);
+      sleep(10);
     }
     else{
       // add chunk to str res, and update total size
