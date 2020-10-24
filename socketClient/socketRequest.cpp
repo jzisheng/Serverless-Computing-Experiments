@@ -34,9 +34,13 @@ std::string getResponseStatus(std::string response){
 std::pair<std::string, std::string> getUrlRoute(std::string url){
     std::size_t idx = url.find("/");
     std::pair<std::string, std::string> urlRoute;
-    urlRoute.first = url.substr(0,idx);
-    urlRoute.second = url.substr(idx+1);
-    // std::cout<<urlRoute.first<< " "<<urlRoute.second <<"\n";
+    if (idx != std::string::npos){
+      urlRoute.first = url.substr(0,idx);
+      urlRoute.second = url.substr(idx+1);
+    } else{
+      urlRoute.first = url;
+      urlRoute.second = "";
+    }
     return urlRoute;
 }
 
@@ -47,7 +51,6 @@ ResData sendRequest(std::string url){
   sc.init_socket();
   // init strings
   std::pair<std::string, std::string> urlRoute = getUrlRoute(url);
-  
   std::string message = "GET /"+urlRoute.second+" HTTP/1.1\nHost:"+urlRoute.first+"\n\n";  
   std::pair<std::string, double> response;
   std::string status;
@@ -157,10 +160,14 @@ void processResults(std::vector<ResData> results){
   std::cout<<"-----------------\n";  
   std::cout<<"success %:       "<<numSuccessReqs<<"/"<<results.size()<<"\n";  
   std::cout<<"-----------------\n";
-  std::cout<<"error responses: " << failed_req.size() << "\n";
-  for(size_t i = 0; i < failed_req.size(); i++){
-    std::cout << failed_req.at(i) << ", ";
-  }  
+  if (failed_req.size() > 0){
+    std::cout<<"error responses: " << failed_req.size() << "\n";
+    for(size_t i = 0; i < failed_req.size(); i++){
+      std::cout << failed_req.at(i) << ", ";
+    }
+  } else{
+    std::cout<<"No error responses.\n";
+  }
 }
 
 void profileUrl(std::string url, int profile){

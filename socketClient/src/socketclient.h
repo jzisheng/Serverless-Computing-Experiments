@@ -24,7 +24,6 @@
 class SocketClient{
 private:
   int socket_desc;
-  int port;
   int sock_status;
   struct sockaddr_in server;
   std::string domain_name;
