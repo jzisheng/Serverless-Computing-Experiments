@@ -1,6 +1,5 @@
 #ifndef __RESDATA_H_
 #define __RESDATA_H_
-
 class ResData{
  public:
   ResData(std::string r, std::string s, size_t dsz, double rt);  

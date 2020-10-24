@@ -161,7 +161,6 @@ std::string SocketClient::get_ip_addr(std::string domain){
   }
   std::string ip_addr_str = std::string(ip);
   free(ip);
-  std::cout<< domain << " --> " <<ip_addr_str<< "\n";
   return ip_addr_str;
 }
 
